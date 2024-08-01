@@ -128,3 +128,7 @@ resource "aws_instance" "prod-instance" {
     user_data = file("user_data.sh")
 }
 
+output "server-public-ip" {
+    value = aws_eip.prod-eip.public_ip
+}
+
