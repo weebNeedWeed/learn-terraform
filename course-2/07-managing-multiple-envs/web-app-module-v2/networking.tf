@@ -1,56 +1,3 @@
-terraform {
-  backend "s3" {
-    bucket         = "my-meowracle-bucket-state"
-    key            = "03-basics/web-app/terraform.tfstate"
-    region         = "ap-southeast-1"
-    dynamodb_table = "my-meowracle-lock-table"
-  }
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "ap-southeast-1"
-}
-
-resource "aws_instance" "instance1" {
-  ami                    = "ami-0b03299ddb99998e9"
-  instance_type          = "t2.micro"
-  vpc_security_group_ids = [aws_security_group.sg.id]
-  user_data              = <<-EOF
-                          dnf update -y
-                          dnf install httpd -y
-                          systemctl start httpd
-                          systemctl enable httpd
-                          EOF
-
-  tags = {
-    Name = "instance1"
-  }
-}
-
-resource "aws_instance" "instance2" {
-  ami                    = "ami-0b03299ddb99998e9"
-  instance_type          = "t2.micro"
-  vpc_security_group_ids = [aws_security_group.sg.id]
-  user_data              = <<-EOF
-              #!/bin/bash
-              dnf update -y
-              dnf install httpd -y
-              systemctl start httpd
-              systemctl enable httpd
-              EOF
-
-  tags = {
-    Name = "instance2"
-  }
-}
-
 data "aws_vpc" "default-vpc" {
   default = true
 }
@@ -68,7 +15,7 @@ data "aws_subnet" "default-public-subnets" {
 }
 
 resource "aws_security_group" "sg" {
-  name   = "allow-http"
+  name   = "${var.app-name}-${var.environment-name}-sg"
   vpc_id = data.aws_vpc.default-vpc.id
 }
 
@@ -89,14 +36,15 @@ resource "aws_vpc_security_group_ingress_rule" "allow-ssh" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow-ssh" {
-  ip_protocol       = "all"
+  ip_protocol       = "-1"
   security_group_id = aws_security_group.sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 0
-  to_port           = 0
+  from_port         = "-1"
+  to_port           = "-1"
 }
 
 resource "aws_lb" "lb" {
+  name               = "${var.app-name}-${var.environment-name}-alb"
   load_balancer_type = "application"
   internal           = false
   security_groups    = [aws_security_group.sg.id]
@@ -111,13 +59,13 @@ resource "aws_lb_target_group" "tg" {
 
 resource "aws_lb_target_group_attachment" "tg-attachment1" {
   target_group_arn = aws_lb_target_group.tg.arn
-  target_id        = aws_instance.instance1.id
+  target_id        = aws_instance.instance[0].id
   port             = 80
 }
 
 resource "aws_lb_target_group_attachment" "tg-attachment2" {
   target_group_arn = aws_lb_target_group.tg.arn
-  target_id        = aws_instance.instance2.id
+  target_id        = aws_instance.instance[1].id
   port             = 80
 }
 

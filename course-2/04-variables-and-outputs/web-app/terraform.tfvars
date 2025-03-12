@@ -1,0 +1,6 @@
+region           = "ap-southeast-1"
+ami              = "ami-0b03299ddb99998e9"
+db-name          = "mydb11"
+db-user          = "mydbuser11"
+domain-name      = "meobeo1111.com"
+s3-bucket-prefix = "04folder"

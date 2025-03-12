@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket         = "my-meowracle-bucket-state"
-    key            = "03-basics/web-app/terraform.tfstate"
+    key            = "04-variables-and-outputs/web-app/terraform.tfstate"
     region         = "ap-southeast-1"
     dynamodb_table = "my-meowracle-lock-table"
   }
@@ -15,12 +15,12 @@ terraform {
 }
 
 provider "aws" {
-  region = "ap-southeast-1"
+  region = var.region
 }
 
 resource "aws_instance" "instance1" {
-  ami                    = "ami-0b03299ddb99998e9"
-  instance_type          = "t2.micro"
+  ami                    = var.ami
+  instance_type          = var.instance-type
   vpc_security_group_ids = [aws_security_group.sg.id]
   user_data              = <<-EOF
                           dnf update -y
@@ -35,8 +35,8 @@ resource "aws_instance" "instance1" {
 }
 
 resource "aws_instance" "instance2" {
-  ami                    = "ami-0b03299ddb99998e9"
-  instance_type          = "t2.micro"
+  ami                    = var.ami
+  instance_type          = var.instance-type
   vpc_security_group_ids = [aws_security_group.sg.id]
   user_data              = <<-EOF
               #!/bin/bash
@@ -89,11 +89,11 @@ resource "aws_vpc_security_group_ingress_rule" "allow-ssh" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow-ssh" {
-  ip_protocol       = "all"
+  ip_protocol       = "-1"
   security_group_id = aws_security_group.sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 0
-  to_port           = 0
+  from_port         = "-1"
+  to_port           = "-1"
 }
 
 resource "aws_lb" "lb" {
@@ -149,5 +149,39 @@ resource "aws_lb_listener_rule" "lb-listener-rule" {
     path_pattern {
       values = ["/"]
     }
+  }
+}
+
+resource "aws_s3_bucket" "s3-bucket" {
+  force_destroy = true
+  bucket_prefix = var.s3-bucket-prefix
+}
+
+resource "aws_db_instance" "sql-db" {
+  allocated_storage    = 10
+  db_name              = var.db-name
+  engine               = "mysql"
+  engine_version       = "8.0"
+  instance_class       = "db.t3.micro"
+  username             = var.db-user
+  password             = var.db-pass
+  parameter_group_name = "default.mysql8.0"
+  skip_final_snapshot  = true
+  publicly_accessible  = true
+}
+
+resource "aws_route53_zone" "route53-zone" {
+  name = var.domain-name
+}
+
+resource "aws_route53_record" "www" {
+  zone_id = aws_route53_zone.route53-zone.id
+  name    = format("www.%s", var.domain-name)
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.lb.dns_name
+    zone_id                = aws_lb.lb.zone_id
+    evaluate_target_health = true
   }
 }
