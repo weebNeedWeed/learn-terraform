@@ -1,9 +1,8 @@
 terraform {
   backend "s3" {
-    bucket       = "states-bucket-032422025"
-    region       = "ap-southeast-1"
-    key          = "states/production/terraform.tfstate"
-    use_lockfile = true
+    bucket = "states-bucket-032422025"
+    region = "ap-southeast-1"
+    key    = "states/production/terraform.tfstate"
   }
   required_providers {
     aws = {

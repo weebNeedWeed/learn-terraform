@@ -1,0 +1,37 @@
+name: "Terraform Apply"
+
+on:
+  push:
+    branches: [master]
+  release:
+    types: [published]
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Check tag
+        id: tag
+        run: |
+          if [[ ${{ github.event_name }} == "push" ]] ; then echo "environment=staging" >> $GITHUB_OUTPUT
+          elif [[ ${{ github.event_name }} == "release" ]] ; then echo "environment=production" >> $GITHUB_OUTPUT
+          else echo "environment=unknown" >> $GITHUB_OUTPUT
+          fi
+      - name: Apply staging
+        if: ${{ steps.tag.outputs.environment == 'staging' && startsWith(github.ref, '/refs/head/main') }}
+        working-directory: course-2/07-managing-multiple-envs/file-structure/staging
+        run: |
+          terraform init
+          terraform apply -auto-approve -var db-pass="hello123"
+      - name: Apply production
+        if: ${{ steps.tag.outputs.environment == 'production' && startsWith(github.ref, '/refs/tags') }}
+        working-directory: course-2/07-managing-multiple-envs/file-structure/production
+        run: |
+          terraform init
+          terraform apply -auto-approve -var db-pass="hello123"
