@@ -28,7 +28,7 @@ jobs:
           echo ref: ${{ github.ref }}
           echo env: ${{ steps.tag.outputs.environment }}
       - name: Apply staging
-        if: ${{ steps.tag.outputs.environment == 'staging' && startsWith(github.ref, '/refs/head/main') }}
+        if: ${{ steps.tag.outputs.environment == 'staging' && startsWith(github.ref, '/refs/head/master') }}
         working-directory: course-2/07-managing-multiple-envs/file-structure/staging
         run: |
           terraform init
