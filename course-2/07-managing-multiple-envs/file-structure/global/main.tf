@@ -1,4 +1,10 @@
 terraform {
+  backend "s3" {
+    bucket       = "states-bucket-032422025"
+    region       = "ap-southeast-1"
+    key          = "states/global/terraform.tfstate"
+    use_lockfile = true
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -12,5 +18,5 @@ provider "aws" {
 }
 
 resource "aws_route53_zone" "primary" {
-  name = "meobeo1111.com"
+  name = "harley.id.vn"
 }
