@@ -23,6 +23,10 @@ jobs:
           elif [[ ${{ github.event_name }} == "release" ]] ; then echo "environment=production" >> $GITHUB_OUTPUT
           else echo "environment=unknown" >> $GITHUB_OUTPUT
           fi
+      - name: check vars
+        run: |
+          echo ref: ${{ github.ref }}
+          echo env: ${{ steps.tag.outputs.environment }}
       - name: Apply staging
         if: ${{ steps.tag.outputs.environment == 'staging' && startsWith(github.ref, '/refs/head/main') }}
         working-directory: course-2/07-managing-multiple-envs/file-structure/staging
