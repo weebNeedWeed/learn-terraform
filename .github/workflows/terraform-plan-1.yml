@@ -15,6 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
       - id: fmt
         run: terraform fmt -check
         continue-on-error: true

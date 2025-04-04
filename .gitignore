@@ -9,7 +9,7 @@
 *.tmp
 *.log
 .terraformrc
-terraform.rc
+terraform.rc 
 override.tf
 override.tf.json
 *_override.tf
