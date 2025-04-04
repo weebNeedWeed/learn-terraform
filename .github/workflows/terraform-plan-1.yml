@@ -1,0 +1,42 @@
+name: "Terraform plan practice 1"
+
+on: [pull_request]
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: course-2/07-managing-multiple-envs/file-structure/staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+      - id: plan
+        run: terraform plan -var "db-pass=mypass123" -no-color
+        continue-on-error: true
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `
+              1. Fmt status: **${{ steps.fmt.outcome }}** 
+              2. Plan status: **${{ steps.plan.outcome }}**
+
+              <details>
+                ${{ steps.plan.outputs.stdout }}
+              </details>
+            `
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body,
+            })
+      - if: steps.fmt.outcome == 'failure' || steps.plan.outcome == 'failure'
+        run: exit 1
+      - uses: actions/setup-go@v5
+      - run: go test .
+        working-directory: course-2/08-testing/tests/terratest
